@@ -2,16 +2,14 @@ import java.util.concurrent.Semaphore;
 
 public class Main {
     public static void main(String[] args) {
-        Fork[] forks = new Fork[5];
+        Semaphore[] forks = new Semaphore[5];
+        Semaphore waiter = new Semaphore(4);
         for (int i = 0; i < 5; i++) {
-            forks[i] = new Fork(i);
+            forks[i] = new Semaphore(1);
         }
-        Waiter waiter = new Waiter();
         Philosopher[] philosophers = new Philosopher[5];
         for (int i = 0; i < 5; i++) {
             philosophers[i] = new Philosopher(i, forks[i], forks[(i + 1) % 5], waiter);
-        }
-        for (int i = 0; i < 5; i++) {
             new Thread(philosophers[i]).start();
         }
     }
@@ -19,11 +17,11 @@ public class Main {
 
 class Philosopher implements Runnable{
     private final int id;
-    private final Fork leftFork;
-    private final Fork rightFork;
-    private final Waiter waiter;
+    private final Semaphore leftFork;
+    private final Semaphore rightFork;
+    private final Semaphore waiter;
 
-    public Philosopher(int id, Fork leftFork, Fork rightFork, Waiter waiter){
+    public Philosopher(int id, Semaphore leftFork, Semaphore rightFork, Semaphore waiter){
         this.id = id;
         this.leftFork = leftFork;
         this.rightFork = rightFork;
@@ -35,36 +33,20 @@ class Philosopher implements Runnable{
         try{
             for (int i = 0; i < 10; i++) {
                 System.out.println("Philosopher " + id + " thinking time " + i);
-                waiter.access.acquire();
-                leftFork.access.acquire();
-                System.out.println("Philosopher " + id + " took fork " + leftFork.id);
-                rightFork.access.acquire();
-                System.out.println("Philosopher " + id + " took fork " + rightFork.id);
+                waiter.acquire();
+                leftFork.acquire();
+                System.out.println("Philosopher " + id + " took left fork ");
+                rightFork.acquire();
+                System.out.println("Philosopher " + id + " took right fork ");
                 System.out.println("Philosopher " + id + " eating time " + i);
-                rightFork.access.release();
-                System.out.println("Philosopher " + id + " put fork " + rightFork.id);
-                leftFork.access.release();
-                System.out.println("Philosopher " + id + " put fork " + leftFork.id);
-                waiter.access.release();
+                rightFork.release();
+                System.out.println("Philosopher " + id + " put right fork ");
+                leftFork.release();
+                System.out.println("Philosopher " + id + " put left fork ");
+                waiter.release();
             }
         }catch(InterruptedException e){
             e.printStackTrace();
         }
-    }
-}
-
-class Fork{
-    public int id;
-    public Semaphore access;
-
-    public Fork(int id){
-        this.id = id;
-        this.access = new Semaphore(1);
-    }
-}
-class Waiter{
-    public Semaphore access;
-    public Waiter(){
-        this.access = new Semaphore(4);
     }
 }
